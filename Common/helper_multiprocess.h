@@ -54,11 +54,25 @@
 #endif
 #include <vector>
 
-// Define "/tmp" as socket creating folder for QNX
+// The Unix domain sockets creating folder on QNX has been restricted to qnx6-mounted directories since QNX SDP 8.0.3.
 #if defined(__QNX__)
-#define SOCK_FOLDER "/tmp/" 
+    #include <string>
+    inline std::string getSocketFolder() {
+        return "/storage";
+    }
+// Simple filesystem compatibility for GCC 8.x
+#elif defined(__GNUC__) && __GNUC__ < 9
+    #include <cstdlib>
+    #include <string>
+    inline std::string getSocketFolder() {
+        const char* tmpdir = std::getenv("TMPDIR");
+        return tmpdir ? std::string(tmpdir) : "/tmp";
+    }
 #else
-#define SOCK_FOLDER ""
+    #include <filesystem>
+    inline std::string getSocketFolder() {
+        return std::filesystem::temp_directory_path().string();
+    }
 #endif
 
 typedef struct sharedMemoryInfo_st {

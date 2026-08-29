@@ -1,6 +1,6 @@
 # CUDA Samples
 
-Samples for CUDA Developers which demonstrates features in CUDA Toolkit. This version supports [CUDA Toolkit 13.0](https://developer.nvidia.com/cuda-downloads).
+Samples for CUDA Developers which demonstrates features in CUDA Toolkit. This version supports [CUDA Toolkit 13.3](https://developer.nvidia.com/cuda-downloads).
 
 ## Release Notes
 
@@ -142,8 +142,8 @@ $ cmake .. -DBUILD_TEGRA=True \
   -DCMAKE_CUDA_COMPILER=/usr/local/cuda/bin/nvcc \
   -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchains/toolchain-aarch64-linux.cmake \
   -DTARGET_FS=/drive/temp \
-  -DCMAKE_LIBRARY_PATH=/drive/temp/usr/local/cuda-13.0/thor/lib64/ \
-  -DCMAKE_INCLUDE_PATH=/drive/temp/usr/local/cuda-13.0/thor/include/
+  -DCMAKE_LIBRARY_PATH=/drive/temp/usr/local/cuda-13.1/thor/lib64/ \
+  -DCMAKE_INCLUDE_PATH=/drive/temp/usr/local/cuda-13.1/thor/include/
 ```
 
 Please note that the following libraries are not pre-installed in the DriveOS dev-nsr target filesystem:
@@ -159,12 +159,12 @@ $ make -j$(nproc) --ignore-errors # or --keep-going
 ```
 
 ```
-# In Samples/5_Domain_Specific/CMakeList.txt
+# In cpp/5_Domain_Specific/CMakeList.txt
 # add_subdirectory(simpleGL)
 # add_subdirectory(simpleVulkan)
 # add_subdirectory(simpleVulkanMMAP)
 
-# In Samples/8_Platform_Specific/Tegra/CMakeList.txt
+# In cpp/8_Platform_Specific/Tegra/CMakeList.txt
 # add_subdirectory(simpleGLES_EGLOutput)
 ```
 
@@ -181,10 +181,10 @@ QNX_HOST=/path/to/qnx/host \
 QNX_TARGET=/path/to/qnx/target \
 cmake .. \
 -DBUILD_TEGRA=True \
--DCMAKE_CUDA_COMPILER=/usr/local/cuda-safe-13.0/bin/nvcc \
+-DCMAKE_CUDA_COMPILER=/usr/local/cuda-13.3/bin/nvcc \
 -DCMAKE_TOOLCHAIN_FILE=../cmake/toolchains/toolchain-aarch64-qnx.cmake \
--DCMAKE_LIBRARY_PATH=/usr/local/cuda-safe-13.0/thor/targets/aarch64-qnx/lib/stubs/ \
--DCMAKE_INCLUDE_PATH=/usr/local/cuda-safe-13.0/thor/targets/aarch64-qnx/include/
+-DCMAKE_LIBRARY_PATH=/usr/local/cuda-13.3/thor/targets/aarch64-qnx/lib/stubs/ \
+-DCMAKE_INCLUDE_PATH=/usr/local/cuda-13.3/thor/targets/aarch64-qnx/include/
 ```
 
 ### Forward Compatibility
@@ -194,6 +194,96 @@ To build samples with new CUDA Toolkit(CUDA 13.0 or later) and UMD(Version 580 o
 ```
 cmake -DCMAKE_PREFIX_PATH=/usr/local/cuda/lib64/stubs/ ..
 ```
+
+## CUDA Python samples
+
+The repository includes **Python** examples under the [`python/`](./python) directory. **These samples are cuda.core–focused:** they use [CUDA Python](https://nvidia.github.io/cuda-python/), with [`cuda.core`](https://nvidia.github.io/cuda-python/cuda-core/latest/) for devices, programs, launches, and memory, alongside NumPy, CuPy, or framework interop where each sample notes.
+
+**Layout (same themes as the C++ samples):**
+
+| Directory | Contents |
+|-----------|----------|
+| `python/1_GettingStarted/` | Introductory scripts (e.g. `vectorAdd`, `deviceQuery`, `systemInfo`, image blur with unified memory, NumPy vs CuPy). |
+| `python/2_CoreConcepts/` | Algorithms and techniques (e.g. reductions, histograms, FFT, stream overlap, `memoryResources`, `cudaGraphs`, `jitLtoLinking`, `tmaTensorMap`). |
+| `python/3_FrameworkInterop/` | Integration with PyTorch and TensorFlow. |
+| `python/4_DistributedComputing/` | Multi-GPU, peer-to-peer, and IPC patterns (`ipcMemoryPool`). |
+| `python/Utilities/` | Shared helpers imported by some samples. |
+
+**How to run:** The top-level CMake build does **not** compile these samples. For each sample, use a Python 3.10+ environment with a matching [CUDA Toolkit](https://developer.nvidia.com/cuda-downloads) (the samples target CUDA 13.x and document exact package pins in `requirements.txt`):
+
+```bash
+cd python/<category>/<sampleName>
+pip install -r requirements.txt
+python <sampleScript>.py
+```
+
+Use each sample’s `README.md` for prerequisites, CLI options, and expected output.
+
+## Install Samples
+
+### Installation Path Structure
+
+The installation system automatically organizes samples into a structured directory layout based on:
+- **Target Architecture**: ${CMAKE_SYSTEM_PROCESSOR}, e.g. `x64`, `aarch64`, `amd64`, etc.
+- **Target OS**: `linux`, `windows`, `darwin`, `qnx`
+- **Build Type**: `release`, `debug`, etc.
+
+The default installation path is: `build/bin/${TARGET_ARCH}/${TARGET_OS}/${BUILD_TYPE}`
+
+**Examples:**
+- Linux x86_64 Release: `build/bin/x64/linux/release`
+- Linux aarch64 Release: `build/bin/aarch64/linux/release`
+- Windows amd64 Release: `build/bin/amd64/windows/release`
+
+### Customizing Installation Paths
+
+You can customize the installation location using CMake variables during the configuration step:
+
+- `CMAKE_INSTALL_PREFIX`: Changes the root installation directory (default: `build/bin`)
+  ```
+  cmake -DCMAKE_INSTALL_PREFIX=/custom/path ..
+  ```
+  This will install to: `/custom/path/${TARGET_ARCH}/${TARGET_OS}/${BUILD_TYPE}`
+
+- `CUDA_SAMPLES_INSTALL_DIR`: Specifies the exact final installation directory (overrides the structured path)
+  ```
+  cmake -DCUDA_SAMPLES_INSTALL_DIR=/exact/install/path ..
+  ```
+
+### Install Samples on Linux
+
+**Prerequisites:** You must first configure the project with CMake as described in the [Building CUDA Samples - Linux](#linux) or [Building]section.
+
+After configuring and building, install the samples:
+
+```
+cd build/
+make install
+```
+
+### Install Samples on Windows
+
+**Prerequisites:** You must first configure the project with CMake as described in the [Building CUDA Samples - Windows](#windows) section.
+
+#### Using Command Line
+
+After configuring with CMake, build and install from the `x64 Native Tools Command Prompt for VS`:
+
+```cmd
+cd build
+cmake --build . --config Release
+cmake --install . --config Release
+```
+
+**Note:** Replace `Release` with `Debug` if you want to install debug builds. For multi-configuration generators (like Visual Studio), the `--config` flag determines which build type to install.
+
+#### Using Visual Studio IDE
+
+Alternatively, open the generated solution file `CUDA_Samples.sln` in Visual Studio:
+1. Select the desired configuration (`Release` or `Debug`)
+2. Build the solution (F7 or Build > Build Solution)
+3. Right-click on the `INSTALL` target under `CMakePredefinedTargets` in Solution Explorer
+4. Select "Build"
 
 ## Running All Samples as Tests
 
@@ -206,7 +296,7 @@ the following command line arguments:
 
 | Switch     | Purpose                                                                                                        | Example                 |
 | ---------- | -------------------------------------------------------------------------------------------------------------- | ----------------------- |
-| --dir      | Specify the root directory to search for executables (recursively)                                             | --dir ./build/Samples   |
+| --dir      | Specify the root directory to search for executables (recursively)                                             | --dir ./build/cpp   |
 | --config   | JSON configuration file for executable arguments                                                               | --config test_args.json |
 | --output   | Output directory for test results (stdout saved to .txt files - directory will be created if it doesn't exist) | --output ./test         |
 | --args     | Global arguments to pass to all executables (not currently used)                                               | --args arg_1 arg_2 ...  |
@@ -331,7 +421,7 @@ make -j$(nproc)
 Now, return to the samples root directory and run the test script:
 ```bash
 cd ..
-python3 run_tests.py --output ./test --dir ./build/Samples --config test_args.json
+python3 run_tests.py --output ./test --dir ./build/cpp --config test_args.json
 ```
 
 If all applications run successfully, you will see something similar to this (the specific number of samples will depend on your build type
@@ -359,29 +449,35 @@ incorrectly on your system.
 
 ## Samples list
 
-### [0. Introduction](./Samples/0_Introduction/README.md)
+### [0. Introduction](./cpp/0_Introduction/README.md)
 Basic CUDA samples for beginners that illustrate key concepts with using CUDA and CUDA runtime APIs.
 
-### [1. Utilities](./Samples/1_Utilities/README.md)
+### [1. Utilities](./cpp/1_Utilities/README.md)
 Utility samples that demonstrate how to query device capabilities and measure GPU/CPU bandwidth.
 
-### [2. Concepts and Techniques](./Samples/2_Concepts_and_Techniques/README.md)
+### [2. Concepts and Techniques](./cpp/2_Concepts_and_Techniques/README.md)
 Samples that demonstrate CUDA related concepts and common problem solving techniques.
 
-### [3. CUDA Features](./Samples/3_CUDA_Features/README.md)
+### [3. CUDA Features](./cpp/3_CUDA_Features/README.md)
 Samples that demonstrate CUDA Features (Cooperative Groups, CUDA Dynamic Parallelism, CUDA Graphs etc).
 
-### [4. CUDA Libraries](./Samples/4_CUDA_Libraries/README.md)
+### [4. CUDA Libraries](./cpp/4_CUDA_Libraries/README.md)
 Samples that demonstrate how to use CUDA platform libraries (NPP, NVJPEG, NVGRAPH cuBLAS, cuFFT, cuSPARSE, cuSOLVER and cuRAND).
 
-### [5. Domain Specific](./Samples/5_Domain_Specific/README.md)
+### [5. Domain Specific](./cpp/5_Domain_Specific/README.md)
 Samples that are specific to domain (Graphics, Finance, Image Processing).
 
-### [6. Performance](./Samples/6_Performance/README.md)
+### [6. Performance](./cpp/6_Performance/README.md)
 Samples that demonstrate performance optimization.
 
-### [7. libNVVM](./Samples/7_libNVVM/README.md)
+### [7. libNVVM](./cpp/7_libNVVM/README.md)
 Samples that demonstrate the use of libNVVVM and NVVM IR.
+
+### [8. Platform Specific](./cpp/8_Platform_Specific/Tegra/README.md)
+Samples that are specific to certain platforms (Tegra, cuDLA, NvMedia, NvSci, OpenGL ES).
+
+### [9. CUDA Tile](./cpp/9_CUDA_Tile/README.md)
+Samples that demonstrate how to use CUDA Tile C++.
 
 ## Dependencies
 
@@ -425,18 +521,27 @@ OpenGL is a graphics library used for 2D and 3D rendering. On systems which supp
 
 OpenGL ES is an embedded systems graphics library used for 2D and 3D rendering. On systems which support OpenGL ES, NVIDIA's OpenGL ES implementation is provided with the CUDA Driver.
 
+#### Freeglut
+
+Freeglut is an open-source software library that serves as a replacement for the original OpenGL Utility Toolkit (GLUT). Its primary purpose is to make it easier for developers to create and manage windows containing OpenGL contexts, as well as handle input from devices like the mouse, keyboard, and joystick, across a wide range of platforms. To set up Freeglut on a Windowson on ARM system, you need to download the source from [Freeglut website](https://freeglut.sourceforge.net/), build freeglut on your system, and copy the freeglut.lib into the folder `./Common/lib/x64` and copy the freeglut.dll file into the `./bin/win64/${BUILD_TYPE}` execution folder.
+
 #### Vulkan
 
 Vulkan is a low-overhead, cross-platform 3D graphics and compute API. Vulkan targets high-performance realtime 3D graphics applications such as video games and interactive media across all platforms. On systems which support Vulkan, NVIDIA's Vulkan implementation is provided with the CUDA Driver. For building and running Vulkan applications one needs to install the [Vulkan SDK](https://www.lunarg.com/vulkan-sdk/).
 
+#### GLEW
+
+GLEW (OpenGL Extension Wrangler Library) is a cross-platform, open-source C/C++ library designed to simplify the process of using modern OpenGL features and extensions. Its main function is to dynamically load OpenGL function pointers at runtime, allowing developers to access both core OpenGL functions and additional features provided by hardware vendors, known as extensions. To set up GLEW on a Windows on ARM system, you need to download the source from [GLEW website](https://glew.sourceforge.net/), build GLEW on your system, and copy the glew32.lib into the folder `./Common/lib/x64` and the glew32.dll into the `./bin/win64/${BUILD_TYPE}` execution folder.
+
 #### GLFW
+
 GLFW is a lightweight, open-source library designed for managing OpenGL, OpenGL ES, and Vulkan contexts. It simplifies the process of creating and managing windows, handling user input (keyboard, mouse, and joystick), and working with multiple monitors in a cross-platform manner.
 
 To set up GLFW on a Windows system, Download the pre-built binaries from [GLFW website](https://www.glfw.org/download.html) and extract the zip file into the folder, pass the GLFW include header folder as `-DGLFW_INCLUDE_DIR` and lib folder as `-DGLFW_LIB_DIR` for cmake configuring.
 
 #### OpenMP
 
-OpenMP is an API for multiprocessing programming. OpenMP can be installed using your Linux distribution's package manager system. It usually comes preinstalled with GCC. It can also be found at the [OpenMP website](http://openmp.org/). For compilers such as clang, `libomp.so` and other components for LLVM must be installed separated. You will also need to set additional flags in your CMake configuration files, such as: `-DOpenMP_CXX_FLAGS="-fopenmp=libomp" -DOpenMP_CXX_LIB_NAMES="omp" -DOpenMP_omp_LIBRARY="/path/to/libomp.so"`.
+OpenMP is an API for multiprocessing programming. OpenMP can be installed using your Linux distribution's package manager system. It usually comes preinstalled with GCC. It can also be found at the [OpenMP website](http://openmp.org/). For compilers such as clang, make sure OpenMP is enabled when building LLVM by including `openmp` in `LLVM_ENABLE_PROJECTS`. If you use clang (from an installed prefix or directly from an LLVM build tree) with OpenMP enabled, set CMAKE_CXX_COMPILER and CMAKE_CUDA_HOST_COMPILER to that clang++ and let CMake detect OpenMP; extra OpenMP_* CMake variables are usually not needed. When using clang++ directly from an LLVM build tree, you may need to copy the generated `omp.h` into the `include/` directory under the path reported by `clang++ --print-resource-dir` before building the samples. When using an installed clang with OpenMP, if you see libomp.so: cannot open shared object file at runtime, add the directory that contains libomp.so to LD_LIBRARY_PATH (or configure it via ld.so.conf.d) so the dynamic linker can locate the OpenMP runtime.
 
 #### Screen
 
@@ -526,6 +631,11 @@ NVJPEG library provides high-performance, GPU accelerated JPEG decoding function
 
 NVRTC (CUDA RunTime Compilation) is a runtime compilation library for CUDA C++.
 
+#### NVJITLINK
+
+NVJITLINK is a CUDA runtime library that links multiple GPU device code objects at runtime and enables just‑in‑time link‑time optimization (JIT LTO).
+It can take device code from tools such as NVCC and NVRTC, link and optimize it on the fly, and produce the final GPU binary.For more details, see: https://docs.nvidia.com/cuda/nvjitlink/index.html
+
 #### Stream Priorities
 
 Stream Priorities allows the creation of streams with specified priorities. Stream Priorities is only available on GPUs with SM architecture of 3.5 or above.
@@ -558,7 +668,7 @@ Answers to frequently asked questions about CUDA can be found at http://develope
 
 ## References
 
-*   [CUDA Programming Guide](http://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html)
+*   [CUDA Programming Guide](https://docs.nvidia.com/cuda/cuda-programming-guide/index.html)
 *   [Accelerated Computing Blog](https://developer.nvidia.com/blog/?tags=accelerated-computing)
 
 ## Attributions

@@ -22,4 +22,12 @@ endif()
 
 set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --extended-lambda")
 
-add_subdirectory(Samples)
+# Add MSVC-specific flags for standard-conforming preprocessor (required for CCCL)
+if(MSVC)
+    add_compile_options($<$<COMPILE_LANGUAGE:CUDA>:-Xcompiler=/Zc:preprocessor>)
+endif()
+
+# Include installation configuration before processing samples
+include(cmake/InstallSamples.cmake)
+
+add_subdirectory(cpp)
